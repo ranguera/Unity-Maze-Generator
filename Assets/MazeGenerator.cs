@@ -6,6 +6,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class MazeGenerator : MonoBehaviour
 {
@@ -67,7 +68,7 @@ public class MazeGenerator : MonoBehaviour
         }
         CurrentTile = Vector2.one;
         _tiletoTry.Push(CurrentTile);
-        CreateMaze();
+        CreateMaze(0);
         GameObject ptype = null;
 
         for (int i = 0; i <= Maze.GetUpperBound(0); i++)
@@ -93,14 +94,36 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-    public void CreateMaze()
+
+    // idees: crear un random segons turns directe a exit complet i despres completar (no cridant lo de next neighbor)
+    // permetre mes forats ?
+    public void CreateMaze(int turns)
     {
+        
+        bool pathCompleted = false;
+        int iteration = 1;
+        int[] iterationBreaks;
+        int iterationBreaksIndex = 0;
+
+        if (turns > 0)
+        {
+            iterationBreaks = new int[turns];
+
+            for (int i = 0; i < turns; i++)
+            {
+
+            }
+        }
+
         //local variable to store neighbors to the current square
         //as we work our way through the maze
         List<Vector2> neighbors;
         //as long as there are still tiles to try
         while (_tiletoTry.Count > 0)
         {
+            if (CurrentTile == new Vector2(width - 2, height - 2))
+                pathCompleted = true;
+
             //excavate the square we are on
             Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 0;
 
@@ -113,7 +136,12 @@ public class MazeGenerator : MonoBehaviour
                 //remember this tile, by putting it on the stack
                 _tiletoTry.Push(CurrentTile);
                 //move on to a random of the neighboring tiles
-                CurrentTile = neighbors[rnd.Next(neighbors.Count)];
+                /*if (!pathCompleted)
+                {
+                        CurrentTile = NextNeighborToExit(CurrentTile);
+                }                    
+                else*/
+                    CurrentTile = neighbors[rnd.Next(neighbors.Count)];
             }
             else
             {
@@ -122,11 +150,17 @@ public class MazeGenerator : MonoBehaviour
                 //(thereby returning to a previous tile in the list to check).
                 CurrentTile = _tiletoTry.Pop();
             }
+            iteration++;
         }
 
         Maze[1, 0] = 0;
-        Maze[height-1, width - 2] = 0;
+        Maze[1, 1] = 0;
+        Maze[width - 2, height - 1] = 0;
+        Maze[width - 2, height - 2] = 0;
     }
+
+
+
     /// <summary>
     /// Get all the prospective neighboring tiles
     /// </summary>
@@ -150,7 +184,7 @@ public class MazeGenerator : MonoBehaviour
                 //if the potential neighbor is unexcavated (==1)
                 //and still has three walls intact (new territory)
                 if (Maze[(int)toCheck.x, (int)toCheck.y] == 1 && HasThreeWallsIntact(toCheck))
-                    {
+                {
                     //add the neighbor
                     validNeighbors.Add(toCheck);
                 }
@@ -159,6 +193,32 @@ public class MazeGenerator : MonoBehaviour
 
         return validNeighbors;
     }
+
+    /// <summary>
+    /// Finds the next neighbour to the exit route. goes straight up, then right.
+    /// There are N
+    /// </summary>
+    /// <returns></returns>
+    private Vector2 NextNeighborToExit(Vector2 current)
+    {
+        if (current.y < height-2 )
+        {
+            return new Vector2(current.x, current.y + 1);
+        }
+        else if ( current.y < 2 )
+        {
+            return new Vector2(current.x + 1, current.y);
+        }
+        else if ( current.x > width-2 )
+        {
+            return new Vector2(current.x, current.y + 1);
+        }
+        else
+        {
+            return new Vector2(current.x + 1, current.y);
+        }
+    }
+
 
 
     /// <summary>
@@ -178,7 +238,7 @@ public class MazeGenerator : MonoBehaviour
 
             //make sure it is inside the maze, and it hasn't been dug out yet
             if (IsInside(neighborToCheck) && Maze[(int)neighborToCheck.x, (int)neighborToCheck.y] == 1)
-                {
+            {
                 intactWallCounter++;
             }
         }
