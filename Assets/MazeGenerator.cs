@@ -19,6 +19,7 @@ public class MazeGenerator : MonoBehaviour
     private System.Random rnd = new System.Random();
     private int _width, _height;
     private Vector2 _currentTile;
+
     public Vector2 CurrentTile
     {
         get { return _currentTile; }
@@ -28,7 +29,7 @@ public class MazeGenerator : MonoBehaviour
             {
                 throw new ArgumentException("CurrentTile must be within the one tile border all around the maze");
             }
-            if (value.x % 2 == 1 || value.y % 2 == 1)
+            if (true)//(value.x % 2 == 1 || value.y % 2 == 1)
             { _currentTile = value; }
             else
             {
@@ -37,6 +38,9 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
+    private Vector2 previousTile;
+
+    /*
     private static MazeGenerator instance;
     public static MazeGenerator Instance
     {
@@ -46,10 +50,13 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
+    private Vector2 
+
     void Awake()
     {
         instance = this;
     }
+    */
 
     void Start()
     {
@@ -99,7 +106,6 @@ public class MazeGenerator : MonoBehaviour
     // permetre mes forats ?
     public void CreateMaze(int turns)
     {
-        
         bool pathCompleted = false;
         int iteration = 1;
         int[] iterationBreaks;
@@ -136,11 +142,11 @@ public class MazeGenerator : MonoBehaviour
                 //remember this tile, by putting it on the stack
                 _tiletoTry.Push(CurrentTile);
                 //move on to a random of the neighboring tiles
-                /*if (!pathCompleted)
-                {
-                        CurrentTile = NextNeighborToExit(CurrentTile);
+                if (!pathCompleted)
+                {    
+                    CurrentTile = NextNeighborToExit(CurrentTile);
                 }                    
-                else*/
+                else
                     CurrentTile = neighbors[rnd.Next(neighbors.Count)];
             }
             else
@@ -153,12 +159,12 @@ public class MazeGenerator : MonoBehaviour
             iteration++;
         }
 
+        // Make sure doors are open
         Maze[1, 0] = 0;
         Maze[1, 1] = 0;
         Maze[width - 2, height - 1] = 0;
         Maze[width - 2, height - 2] = 0;
     }
-
 
 
     /// <summary>
@@ -195,8 +201,7 @@ public class MazeGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Finds the next neighbour to the exit route. goes straight up, then right.
-    /// There are N
+    /// Finds the next neighbour to the straight exit route. goes straight up, then right.
     /// </summary>
     /// <returns></returns>
     private Vector2 NextNeighborToExit(Vector2 current)
@@ -218,7 +223,6 @@ public class MazeGenerator : MonoBehaviour
             return new Vector2(current.x + 1, current.y);
         }
     }
-
 
 
     /// <summary>
