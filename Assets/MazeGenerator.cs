@@ -108,22 +108,59 @@ public class MazeGenerator : MonoBehaviour
     {
         bool pathCompleted = false;
         int iteration = 1;
-        int[] iterationBreaks;
-        int iterationBreaksIndex = 0;
+        int turnsMade = 0;
+        Vector2 previousTile = CurrentTile;
 
-        if (turns > 0)
-        {
-            iterationBreaks = new int[turns];
-
-            for (int i = 0; i < turns; i++)
-            {
-
-            }
-        }
+        // First pass - path to exit with N turns
 
         //local variable to store neighbors to the current square
         //as we work our way through the maze
         List<Vector2> neighbors;
+        //as long as there are still tiles to try
+        while (!pathCompleted)
+        {
+            //excavate the square we are on
+            Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 0;
+
+            //get all valid neighbors for the new tile
+            neighbors = GetValidNeighbors(CurrentTile);
+
+            //if there are any interesting looking neighbors
+            if (neighbors.Count > 0)
+            {
+                //remember this tile, by putting it on the stack
+                _tiletoTry.Push(CurrentTile);
+                //move on to a random of the neighboring tiles
+
+                CurrentTile = NextNeighborToExit(CurrentTile);
+                /*if (CurrentTile.x != previousTile.x && CurrentTile.y != previousTile.y)
+                    turnsMade++;*/
+
+                if (CurrentTile == new Vector2(width - 2, height - 2))
+                    pathCompleted = true;
+            }
+            else
+            {
+                //if there were no neighbors to try, we are at a dead-end
+                //toss this tile out
+                //(thereby returning to a previous tile in the list to check).
+                CurrentTile = _tiletoTry.Pop();
+                // unexcavate to continue finding the path to exit
+                Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 1;
+                if (CurrentTile.x != previousTile.x && CurrentTile.y != previousTile.y)
+                    turnsMade--;
+                previousTile = CurrentTile;
+            }
+            iteration++;
+        }
+
+
+        
+        // Second pass - complete maze
+
+        //local variable to store neighbors to the current square
+        //as we work our way through the maze
+        neighbors = new List<Vector2>();
         //as long as there are still tiles to try
         while (_tiletoTry.Count > 0)
         {
@@ -142,12 +179,8 @@ public class MazeGenerator : MonoBehaviour
                 //remember this tile, by putting it on the stack
                 _tiletoTry.Push(CurrentTile);
                 //move on to a random of the neighboring tiles
-                if (!pathCompleted)
-                {    
-                    CurrentTile = NextNeighborToExit(CurrentTile);
-                }                    
-                else
-                    CurrentTile = neighbors[rnd.Next(neighbors.Count)];
+                
+                CurrentTile = neighbors[rnd.Next(neighbors.Count)];
             }
             else
             {
