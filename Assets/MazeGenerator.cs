@@ -13,8 +13,10 @@ public class MazeGenerator : MonoBehaviour
     public int width, height;
     public Material brick;
     private int[,] Maze;
+    private GameObject[,] MazeObjects;
     private List<Vector3> pathMazes = new List<Vector3>();
     private Stack<Vector2> _tiletoTry = new Stack<Vector2>();
+    private Stack<Vector2> _pathToExit = new Stack<Vector2>();
     private List<Vector2> offsets = new List<Vector2> { new Vector2(0, 1), new Vector2(0, -1), new Vector2(1, 0), new Vector2(-1, 0) };
     private System.Random rnd = new System.Random();
     private int _width, _height;
@@ -66,50 +68,108 @@ public class MazeGenerator : MonoBehaviour
     void GenerateMaze()
     {
         Maze = new int[width, height];
+        MazeObjects = new GameObject[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
+                GameObject ptype = null;
                 Maze[x, y] = 1;
+                ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                ptype.transform.position = new Vector3(x * ptype.transform.localScale.x, y * ptype.transform.localScale.y, 0);
+                ptype.GetComponent<Renderer>().material.color = Color.red;
+                ptype.transform.parent = transform;
+                MazeObjects[x, y] = ptype;
             }
         }
         CurrentTile = Vector2.one;
         _tiletoTry.Push(CurrentTile);
-        CreateMaze(0);
-        GameObject ptype = null;
+        StartCoroutine(CreateMaze(0));
+        
 
+        //RenderMaze();
+    }
+
+    private void RenderMaze()
+    {
+        GameObject ptype = null;
         for (int i = 0; i <= Maze.GetUpperBound(0); i++)
         {
             for (int j = 0; j <= Maze.GetUpperBound(1); j++)
             {
+                //print("ij: " + i + "-" + j);
+                ptype = MazeObjects[i, j];
                 if (Maze[i, j] == 1)
                 {
-                    ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    ptype.transform.position = new Vector3(i * ptype.transform.localScale.x, j * ptype.transform.localScale.y, 0);
-                    if (brick != null)
-                    {
-                        ptype.GetComponent<Renderer>().material = brick;
-                    }
-                    ptype.transform.parent = transform;
+                    if (i % 2 == 0 && j % 2 == 0)
+                        ptype.GetComponent<Renderer>().material.color = Color.gray;
+                    else
+                        ptype.GetComponent<Renderer>().material.color = Color.white;
                 }
+                else if (Maze[i, j] == 2)
+                    ptype.GetComponent<Renderer>().material.color = Color.magenta;
                 else if (Maze[i, j] == 0)
-                {
-                    pathMazes.Add(new Vector3(i, j, 0));
-                }
+                    ptype.GetComponent<Renderer>().material.color = Color.cyan;
 
+                    pathMazes.Add(new Vector3(i, j, 0));
             }
         }
+
+                /*
+                for (int i = 0; i <= Maze.GetUpperBound(0); i++)
+                {
+                    for (int j = 0; j <= Maze.GetUpperBound(1); j++)
+                    {
+                        if (Maze[i, j] == 1)
+                        {
+                            ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                            ptype.transform.position = new Vector3(i * ptype.transform.localScale.x, j * ptype.transform.localScale.y, 0);
+                            ptype.transform.parent = transform;
+                        }
+                        else if( Maze[i,j] == 2 )
+                        {
+                            ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                            ptype.transform.position = new Vector3(i * ptype.transform.localScale.x, j * ptype.transform.localScale.y, 0);
+                            ptype.transform.parent = transform;
+                            ptype.GetComponent<Renderer>().material.color = Color.red;
+                        }
+                        else if (Maze[i, j] == 0)
+                        {
+                            if (i % 2 == 0 && j % 2 == 0)
+                            {
+                                ptype.GetComponent<Renderer>().material.color = Color.gray;
+                                ptype.transform.parent = transform;
+                            }
+                            pathMazes.Add(new Vector3(i, j, 0));
+                        }
+
+                    }
+                }
+                */
     }
 
 
     // idees: crear un random segons turns directe a exit complet i despres completar (no cridant lo de next neighbor)
     // permetre mes forats ?
-    public void CreateMaze(int turns)
+    public IEnumerator CreateMaze(int turns)
     {
         bool pathCompleted = false;
         int iteration = 1;
-        int turnsMade = 0;
+        int moves_made = 1; // 1 because it starts at (1,1)
         Vector2 previousTile = CurrentTile;
+
+        int x = Mathf.FloorToInt((width - 2) / 2);
+        int num_cols = Mathf.RoundToInt(Mathf.Pow(x, 2));
+        int fastest_route = ((width - 2) * 2) - 1;
+        int slowest_route = 0;
+        int empty_spaces = Mathf.RoundToInt(Mathf.Pow(x, 2));
+        int num_routes = 0;
+
+        if (x % 2 == 1)
+            empty_spaces += 2;
+
+        slowest_route = Mathf.RoundToInt(Mathf.Pow((width - 2), 2)) - num_cols - empty_spaces;
+        num_routes = ((slowest_route - fastest_route) / 4) - 1;
 
         // First pass - path to exit with N turns
 
@@ -126,36 +186,55 @@ public class MazeGenerator : MonoBehaviour
             neighbors = GetValidNeighbors(CurrentTile);
 
             //if there are any interesting looking neighbors
-            if (neighbors.Count > 0)
+            if (neighbors.Count > 0 && moves_made < slowest_route)
             {
                 //remember this tile, by putting it on the stack
                 _tiletoTry.Push(CurrentTile);
                 //move on to a random of the neighboring tiles
 
-                CurrentTile = NextNeighborToExit(CurrentTile);
+                //CurrentTile = NextNeighborToExit(CurrentTile);
+                //print("nc: " + neighbors.Count);
+                int kk = rnd.Next(neighbors.Count);
+                //print("kk: " + kk);
+                CurrentTile = neighbors[kk];
+                print(CurrentTile);
+                moves_made++;
+                //print(moves_made);
                 /*if (CurrentTile.x != previousTile.x && CurrentTile.y != previousTile.y)
                     turnsMade++;*/
 
                 if (CurrentTile == new Vector2(width - 2, height - 2))
+                {
+                    Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 0;
                     pathCompleted = true;
+                }
             }
             else
             {
                 //if there were no neighbors to try, we are at a dead-end
                 //toss this tile out
                 //(thereby returning to a previous tile in the list to check).
-                CurrentTile = _tiletoTry.Pop();
+
+                Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 2; //mark as visited
+                moves_made--;
+
+                if ( _tiletoTry.Count >0 )
+                    CurrentTile = _tiletoTry.Pop();
+                //print(CurrentTile);
                 // unexcavate to continue finding the path to exit
-                Maze[(int)CurrentTile.x, (int)CurrentTile.y] = 1;
-                if (CurrentTile.x != previousTile.x && CurrentTile.y != previousTile.y)
-                    turnsMade--;
-                previousTile = CurrentTile;
+                
+                //print(moves_made);
             }
             iteration++;
+
+            RenderMaze();
+            yield return new WaitForSeconds(.2f);
+
+            //yield return null;
         }
 
 
-        
+        /*
         // Second pass - complete maze
 
         //local variable to store neighbors to the current square
@@ -191,8 +270,9 @@ public class MazeGenerator : MonoBehaviour
             }
             iteration++;
         }
+        */
 
-        // Make sure doors are open
+        // Make sure doors of perception are open
         Maze[1, 0] = 0;
         Maze[1, 1] = 0;
         Maze[width - 2, height - 1] = 0;
