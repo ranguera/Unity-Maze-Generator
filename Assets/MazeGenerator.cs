@@ -7,6 +7,8 @@ public class MazeGenerator : MonoBehaviour
 {
     public int width, height;
     public Material brick;
+    public GameObject quadcube;
+
     private int[,] Maze;
     private List<Vector3> pathMazes = new List<Vector3>();
     private Stack<Vector2> _tiletoTry = new Stack<Vector2>();
@@ -74,7 +76,7 @@ public class MazeGenerator : MonoBehaviour
             {
                 if (Maze[i, j] == 1)
                 {
-                    ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    ptype = Instantiate(quadcube, Vector3.zero, Quaternion.identity) as GameObject;
                     ptype.transform.position = new Vector3(i * ptype.transform.localScale.x, j * ptype.transform.localScale.y, 0);
                     ptype.transform.parent = transform;
                 }
