@@ -8,6 +8,7 @@ public class Gamepad : MonoBehaviour {
     public float speed;
 
     private float xAxis, zAxis;
+    private Vector3 tmp;
 
     // Use this for initialization
     void Start () {
@@ -19,13 +20,16 @@ public class Gamepad : MonoBehaviour {
         xAxis = Input.GetAxis("Horizontal");
         zAxis = Input.GetAxis("Vertical");
 
+        tmp = viveRig.forward;
+        tmp.y = 0f;
+
         if( zAxis > .5f )
         {
-            this.transform.Translate(viveRig.forward*speed);
+            this.transform.Translate(tmp*speed);
         }
         else if (zAxis < -.5f)
         {
-            this.transform.Translate(viveRig.forward * -1f * speed);
+            this.transform.Translate(tmp * -1f * speed);
         }
     }
 }
